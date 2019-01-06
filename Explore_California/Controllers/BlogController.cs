@@ -10,31 +10,16 @@ namespace Explore_California.Controllers
     [Route("blog")]
     public class BlogController : Controller
     {
+        private readonly BlogDataContext _db;
+
+        public BlogController(BlogDataContext db)
+        {
+            _db = db;
+        }
+
         public IActionResult Index()
         {
-            var posts = new[]
-            {
-                new Post {
-                    Title = "My First Post",
-                    Author = "Saney Alam",
-                    Posted = DateTime.Now,
-                    Body = "This is a great blog post, don't you think?"
-                },
-                new Post
-                {
-                    Title = "My Second Post",
-                    Author = "Jannatul Ferdous",
-                    Posted = DateTime.Now,
-                    Body = "This is a great blog post, don't you think?"
-                },
-                new Post
-                {
-                    Title = "My Third Post",
-                    Author = "Habibur Rahman",
-                    Posted = DateTime.Now,
-                    Body = "This is a great blog post, don't you think?"
-                }
-            };
+            var posts = _db.Posts.OrderByDescending(x => x.Posted).Take(5).ToArray();
 
             return View(posts);
         }
@@ -42,19 +27,34 @@ namespace Explore_California.Controllers
         [Route("{year:min(2010)}/{month:range(1,12)}/{key}")]
         public IActionResult Post(int year, int month, string key) {
 
-            var post = new Post {
-                Title = "My Blog Post",
-                Author="Saney Alam",
-                Posted = DateTime.Now,
-                Body ="This is a great blog post, don't you think?"
-            }; 
+            var post = _db.Posts.FirstOrDefault(x => x.Key == key); 
             return View(post);
         }
 
-        [Route("create")]
+        [HttpGet, Route("create")]
         public IActionResult Create() {
 
             return View();
+        }
+
+        [HttpPost, Route("create")]
+        public IActionResult Create(Post post)
+        {
+            if (!ModelState.IsValid)
+                return View();
+
+            post.Author = User.Identity.Name;
+            post.Posted = DateTime.Now;
+
+            _db.Posts.Add(post);
+            _db.SaveChanges();
+
+            return RedirectToAction("Post", "Blog", new
+            {
+                year = post.Posted.Year,
+                month = post.Posted.Month,
+                key = post.Key
+            });
         }
     }
 }

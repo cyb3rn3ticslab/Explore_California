@@ -10,6 +10,8 @@
 
 <fieldset>
     @using (Html.BeginForm()){ 
+
+        @Html.ValidationSummary()
         
         <p>
             @Html.LabelFor(x => x.Title)
